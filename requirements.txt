@@ -1,0 +1,3 @@
+mpxj
+jpype1
+install-jdk

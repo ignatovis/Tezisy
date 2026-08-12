@@ -1,0 +1,8 @@
+*.mpp
+*.pdf
+*.xlsx
+*.html
+*.json
+*.docx
+__pycache__/
+*.pyc
