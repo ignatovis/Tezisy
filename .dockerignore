@@ -1,0 +1,16 @@
+__pycache__
+*.pyc
+.git
+*.mpp
+*.docx
+Тезисы для анализа/
+uploads/
+Тест.mpp
+read_mpp.py
+read_docs.py
+generate_checklist_docx.py
+main.py
+analyzer.py
+report.py
+CLAUDE.md
+20260812_*.html

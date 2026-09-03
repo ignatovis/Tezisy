@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Загрузка{% endblock %}
+
+{% block extra_css %}
+.hero{text-align:center;padding:32px 0 24px;}
+.hero h1{font-size:26px;font-weight:700;color:var(--c-dark);margin-bottom:8px;}
+.hero p{font-size:14px;color:var(--c-purple-muted);max-width:520px;margin:0 auto;}
+
+.upload-form{max-width:640px;margin:0 auto;}
+
+.form-group{margin-bottom:20px;}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--c-dark2);
+  margin-bottom:8px;letter-spacing:.02em;}
+
+.mode-toggle{display:flex;gap:8px;margin-bottom:20px;}
+.mode-btn{flex:1;padding:12px;border:2px solid var(--border);border-radius:10px;
+  background:rgba(117,75,233,.04);cursor:pointer;text-align:center;
+  transition:all .15s;font-family:inherit;}
+.mode-btn:hover{border-color:var(--c-purple);background:rgba(117,75,233,.08);}
+.mode-btn.active{border-color:var(--c-purple2);background:rgba(107,59,255,.10);
+  box-shadow:0 0 0 1px var(--c-purple2);}
+.mode-btn input{display:none;}
+.mode-btn .mode-name{font-size:14px;font-weight:700;color:var(--c-dark);}
+.mode-btn .mode-desc{font-size:11px;color:var(--c-purple-muted);margin-top:4px;}
+
+.text-input{width:100%;min-height:200px;border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;font-size:13px;font-family:inherit;
+  background:rgba(117,75,233,.03);resize:vertical;outline:none;
+  transition:border-color .15s,background .15s;color:var(--c-dark);}
+.text-input:focus{border-color:var(--c-purple);background:#fff;
+  box-shadow:0 0 0 3px rgba(117,75,233,.08);}
+.text-input::placeholder{color:var(--c-purple-muted);opacity:.6;}
+
+.or-divider{text-align:center;padding:16px 0;color:var(--c-purple-muted);
+  font-size:12px;font-weight:600;position:relative;}
+.or-divider::before,.or-divider::after{content:'';position:absolute;top:50%;
+  width:calc(50% - 30px);height:1px;background:var(--border);}
+.or-divider::before{left:0;}
+.or-divider::after{right:0;}
+
+.file-drop{border:2px dashed var(--border);border-radius:10px;padding:28px 20px;
+  text-align:center;cursor:pointer;transition:all .15s;
+  background:rgba(117,75,233,.02);}
+.file-drop:hover,.file-drop.drag-over{border-color:var(--c-purple);
+  background:rgba(117,75,233,.06);}
+.file-drop-icon{font-size:28px;margin-bottom:8px;}
+.file-drop-text{font-size:13px;color:var(--c-dark2);}
+.file-drop-hint{font-size:11px;color:var(--c-purple-muted);margin-top:4px;}
+.file-drop input[type="file"]{display:none;}
+.file-name{font-size:12px;color:var(--c-green);font-weight:600;margin-top:8px;}
+
+.author-input{width:100%;border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;font-size:13px;font-family:inherit;
+  background:rgba(117,75,233,.03);outline:none;
+  transition:border-color .15s,background .15s;color:var(--c-dark);}
+.author-input:focus{border-color:var(--c-purple);background:#fff;
+  box-shadow:0 0 0 3px rgba(117,75,233,.08);}
+
+.submit-btn{width:100%;padding:14px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,var(--c-purple) 0%,var(--c-purple2) 100%);
+  color:#fff;font-size:15px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:all .15s;letter-spacing:.01em;
+  box-shadow:0 4px 16px rgba(117,75,233,.25);}
+.submit-btn:hover{transform:translateY(-1px);
+  box-shadow:0 6px 24px rgba(117,75,233,.35);}
+.submit-btn:active{transform:translateY(0);}
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Анализ тезисов</h1>
+  <p>Загрузите текст тезисов или файл .docx — система проверит покрытие чек-листа и покажет результат</p>
+</div>
+
+<div class="upload-form">
+  <form method="POST" action="{{ url_for('analyze') }}" enctype="multipart/form-data" id="analyzeForm">
+    <div class="card">
+      <div class="card-title">Режим анализа</div>
+      <div class="mode-toggle">
+        <label class="mode-btn active" data-mode="smr">
+          <input type="radio" name="mode" value="smr" checked>
+          <div class="mode-name">СМР</div>
+          <div class="mode-desc">Строительно-монтажные работы</div>
+        </label>
+        <label class="mode-btn" data-mode="rns">
+          <input type="radio" name="mode" value="rns">
+          <div class="mode-name">до РНС</div>
+          <div class="mode-desc">Разрешение на строительство</div>
+        </label>
+        <label class="mode-btn" data-mode="auto">
+          <input type="radio" name="mode" value="auto">
+          <div class="mode-name">Авто</div>
+          <div class="mode-desc">Определить по тексту</div>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Текст тезисов</div>
+      <div class="form-group">
+        <textarea class="text-input" name="text" id="textInput"
+          placeholder="Вставьте текст тезисов для анализа..."></textarea>
+      </div>
+
+      <div class="or-divider">или</div>
+
+      <div class="form-group">
+        <div class="file-drop" id="fileDrop">
+          <div class="file-drop-icon">📄</div>
+          <div class="file-drop-text">Перетащите файл сюда или нажмите для выбора</div>
+          <div class="file-drop-hint">.docx или .txt, до 16 МБ</div>
+          <input type="file" name="file" id="fileInput" accept=".docx,.txt">
+          <div class="file-name" id="fileName"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Автор тезисов</div>
+      <div class="form-group">
+        <input type="text" class="author-input" name="author"
+          placeholder="Фамилия И.О. (необязательно)">
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn">Анализировать</button>
+  </form>
+</div>
+
+<script>
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+const fileDrop = document.getElementById('fileDrop');
+const fileInput = document.getElementById('fileInput');
+const fileName = document.getElementById('fileName');
+
+fileDrop.addEventListener('click', () => fileInput.click());
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    fileName.textContent = e.dataTransfer.files[0].name;
+  }
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) fileName.textContent = fileInput.files[0].name;
+});
+</script>
+{% endblock %}

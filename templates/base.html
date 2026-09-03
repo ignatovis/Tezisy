@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Анализ тезисов{% endblock %} — MR Group</title>
+<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+<style>
+@font-face {
+    font-family: 'SuisseIntl';
+    src: url('{{ url_for("static", filename="fonts/SuisseIntl-Regular.ttf") }}') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'SuisseIntl';
+    src: url('{{ url_for("static", filename="fonts/SuisseIntl-Light.ttf") }}') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:'SuisseIntl','Helvetica Neue',Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+
+:root{
+  --bg:#FAFAFE;
+  --c-dark:#0E0820;--c-dark2:#1A0E38;--c-dark3:#1E0E48;
+  --c-purple:#754BE9;--c-purple2:#6B3BFF;--c-purple3:#5C2BFF;
+  --c-purple-muted:#6B5FA0;--c-purple-dim:rgba(117,75,233,0.72);
+  --border:rgba(117,75,233,0.16);--border-s:rgba(117,75,233,0.14);
+  --shadow:0 4px 28px rgba(117,75,233,0.11),0 1px 4px rgba(9,7,20,0.07);
+  --shadow-h:0 8px 40px rgba(117,75,233,0.18),0 2px 8px rgba(14,8,32,0.09);
+  --c-green:#1A7A42;--bg-green:rgba(26,122,66,0.10);
+  --c-red:#C82828;--bg-red:rgba(200,40,40,0.10);
+  --c-orange:#B8860B;--bg-orange:rgba(184,134,11,0.10);
+  --c-gray:#6B5FA0;--bg-gray:rgba(117,75,233,0.06);
+  --radius:14px;
+}
+body{background:var(--bg);color:var(--c-dark);font-size:14px;min-height:100vh;}
+
+.hdr{background:linear-gradient(135deg,#0E0820 0%,#1A0E48 60%,#2D1680 100%);
+  padding:0 28px;display:flex;align-items:center;gap:14px;height:56px;
+  border-bottom:1px solid rgba(117,75,233,.30);}
+.hdr-icon{width:32px;height:32px;background:rgba(117,75,233,.22);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:-.01em;color:#fff;flex:1;}
+.hdr-title a{color:#fff;text-decoration:none;display:flex;align-items:center;gap:8px;}
+.hdr-title a:hover{opacity:0.85;}
+.hdr-sub{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(117,75,233,.72);white-space:nowrap;}
+.hdr-nav{display:flex;gap:6px;}
+.hdr-nav a{color:rgba(255,255,255,0.7);text-decoration:none;font-size:12px;
+  padding:6px 14px;border-radius:8px;transition:all .15s;}
+.hdr-nav a:hover{color:#fff;background:rgba(117,75,233,.22);}
+.hdr-nav a.active{color:#fff;background:rgba(117,75,233,.32);}
+
+.container{max-width:960px;margin:0 auto;padding:24px 28px 60px;}
+
+.flash-msg{padding:12px 18px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:500;}
+.flash-error{background:var(--bg-red);color:var(--c-red);border:1px solid rgba(200,40,40,0.2);}
+.flash-success{background:var(--bg-green);color:var(--c-green);border:1px solid rgba(26,122,66,0.2);}
+
+.card{position:relative;overflow:hidden;border-radius:var(--radius);
+  background:linear-gradient(135deg,rgba(255,255,255,.70) 0%,rgba(255,255,255,.38) 50%,rgba(117,75,233,.07) 100%);
+  backdrop-filter:blur(24px) saturate(200%) brightness(1.06);
+  -webkit-backdrop-filter:blur(24px) saturate(200%) brightness(1.06);
+  border-top:1px solid rgba(255,255,255,.90);border-left:1px solid rgba(255,255,255,.75);
+  border-right:1px solid rgba(255,255,255,.30);border-bottom:1px solid rgba(255,255,255,.20);
+  box-shadow:var(--shadow);padding:24px;margin-bottom:16px;}
+.card:hover{box-shadow:var(--shadow-h);}
+
+.card-title{font-size:16px;font-weight:700;color:var(--c-dark);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;}
+.card-title .num{color:var(--c-purple);font-size:13px;font-weight:600;
+  background:rgba(117,75,233,.08);padding:2px 8px;border-radius:6px;}
+
+.footer{text-align:center;color:var(--c-purple-muted);font-size:11px;padding:32px 0 16px;
+  border-top:1px solid var(--border-s);margin-top:32px;}
+
+@media(max-width:640px){
+  .container{padding:16px 14px 40px;}
+  .hdr{padding:0 14px;}
+}
+{% block extra_css %}{% endblock %}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-icon">📋</div>
+  <div class="hdr-title"><a href="{{ url_for('index') }}">Анализ тезисов</a></div>
+  <div class="hdr-nav">
+    <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Анализ</a>
+    <a href="{{ url_for('help_page') }}" class="{% if request.endpoint == 'help_page' %}active{% endif %}">Справка</a>
+  </div>
+  <div class="hdr-sub">MR Group</div>
+</div>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  <div class="footer">Анализ тезисов v2.0 · MR Group · Сформировано автоматически</div>
+</div>
+</body>
+</html>

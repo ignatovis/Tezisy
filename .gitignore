@@ -2,7 +2,10 @@
 *.pdf
 *.xlsx
 *.html
+!templates/*.html
 *.json
 *.docx
 __pycache__/
 *.pyc
+uploads/
+*.ttf

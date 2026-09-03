@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Справка{% endblock %}
+
+{% block extra_css %}
+.help-hero{text-align:center;padding:32px 0 24px;}
+.help-hero h1{font-size:24px;font-weight:700;color:var(--c-dark);margin-bottom:8px;}
+.help-hero p{font-size:14px;color:var(--c-purple-muted);}
+
+.help-section{margin-bottom:8px;}
+.help-section h2{font-size:15px;font-weight:700;color:var(--c-dark);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.help-section h3{font-size:13px;font-weight:600;color:var(--c-dark2);margin:12px 0 6px;}
+.help-section p{font-size:13px;color:var(--c-dark2);line-height:1.7;margin-bottom:8px;}
+.help-section ul{list-style:none;padding:0;}
+.help-section li{padding:6px 0 6px 20px;position:relative;font-size:13px;
+  color:var(--c-dark2);line-height:1.6;}
+.help-section li::before{content:'•';position:absolute;left:4px;color:var(--c-purple);}
+
+.checklist-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+.checklist-table th{text-align:left;padding:8px 10px;background:rgba(117,75,233,.06);
+  color:var(--c-purple-muted);font-weight:600;border-bottom:2px solid var(--border);}
+.checklist-table td{padding:8px 10px;border-bottom:1px solid rgba(117,75,233,.06);
+  color:var(--c-dark2);}
+.checklist-table .num-cell{font-weight:700;color:var(--c-purple);width:40px;}
+
+.score-legend{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;}
+.legend-item{display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border-radius:8px;font-size:12px;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.legend-item.good{background:var(--bg-green);}
+.legend-item.good .legend-dot{background:var(--c-green);}
+.legend-item.partial{background:rgba(117,75,233,.06);}
+.legend-item.partial .legend-dot{background:var(--c-purple);}
+.legend-item.weak{background:var(--bg-orange);}
+.legend-item.weak .legend-dot{background:var(--c-orange);}
+.legend-item.missing{background:var(--bg-red);}
+.legend-item.missing .legend-dot{background:var(--c-red);}
+{% endblock %}
+
+{% block content %}
+<div class="help-hero">
+  <h1>Справка</h1>
+  <p>Как работает анализ тезисов и что означают оценки</p>
+</div>
+
+<div class="card help-section">
+  <h2>📋 Что делает система</h2>
+  <p>Система проверяет текст тезисов на соответствие утверждённому чек-листу.
+     Для каждого обязательного раздела анализируется наличие ключевых тем,
+     количественных данных и уровень детализации.</p>
+</div>
+
+<div class="card help-section">
+  <h2>🔧 Режимы анализа</h2>
+  <h3>СМР — Строительно-монтажные работы</h3>
+  <p>Для проектов на стадии строительства. Проверяется: отклонения от графика,
+     критический путь, ресурсы, влияние на ЗОС/РНВ.</p>
+  <h3>до РНС — Разрешение на строительство</h3>
+  <p>Для проектов на стадии получения разрешений. Проверяется: критический путь до РНС,
+     каскадные сдвиги, обязательства по МПТ, прогноз даты РНС.</p>
+  <h3>Авто</h3>
+  <p>Режим определяется автоматически по ключевым словам в тексте.</p>
+</div>
+
+<div class="card help-section">
+  <h2>📊 Чек-лист разделов</h2>
+
+  <h3>Общие разделы (оба режима)</h3>
+  <table class="checklist-table">
+    <thead><tr><th>№</th><th>Раздел</th><th>Описание</th></tr></thead>
+    <tbody>
+      <tr><td class="num-cell">2.1</td><td>Заголовок</td><td>Название проекта, дата, режим</td></tr>
+      <tr><td class="num-cell">2.2</td><td>Ключевые метрики</td><td>% завершения, критические задачи, отклонение вехи</td></tr>
+      <tr><td class="num-cell">2.3</td><td>Ближайшие события</td><td>События в горизонте 1 месяц</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Разделы СМР</h3>
+  <table class="checklist-table">
+    <thead><tr><th>№</th><th>Раздел</th><th>Описание</th></tr></thead>
+    <tbody>
+      <tr><td class="num-cell">3.1</td><td>Декомпозиция отклонений</td><td>Задачи с отклонением >14 дней</td></tr>
+      <tr><td class="num-cell">3.2</td><td>Группировка по зонам</td><td>Агрегация по корпусам/этапам</td></tr>
+      <tr><td class="num-cell">3.3</td><td>Критические задачи</td><td>Задачи на крит. пути с низким %</td></tr>
+      <tr><td class="num-cell">3.4</td><td>Временной резерв</td><td>Некритические задачи с резервом</td></tr>
+      <tr><td class="num-cell">3.5</td><td>Зоны опережения</td><td>Опережение >14 дней</td></tr>
+      <tr><td class="num-cell">3.6</td><td>Финальные вехи</td><td>Прогноз ЗОС/РНВ</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Разделы РНС</h3>
+  <table class="checklist-table">
+    <thead><tr><th>№</th><th>Раздел</th><th>Описание</th></tr></thead>
+    <tbody>
+      <tr><td class="num-cell">4.1</td><td>Критический путь до РНС</td><td>Критические вехи до РНС</td></tr>
+      <tr><td class="num-cell">4.2</td><td>Причины сдвигов</td><td>Корневые причины отклонений</td></tr>
+      <tr><td class="num-cell">4.3</td><td>Каскадное влияние</td><td>Цепочка задержек → РНС</td></tr>
+      <tr><td class="num-cell">4.4</td><td>Обязательства МПТ</td><td>Статус задач МПТ/ковенантов</td></tr>
+      <tr><td class="num-cell">4.5</td><td>Зоны неопределённости</td><td>Задачи без базового плана</td></tr>
+      <tr><td class="num-cell">4.6</td><td>Прогноз РНС</td><td>Итоговый прогноз даты</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Управленческий раздел</h3>
+  <table class="checklist-table">
+    <thead><tr><th>№</th><th>Раздел</th><th>Описание</th></tr></thead>
+    <tbody>
+      <tr><td class="num-cell">5.1</td><td>Управленческие решения</td><td>Рекомендации и мероприятия</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card help-section">
+  <h2>🎯 Шкала оценок</h2>
+  <div class="score-legend">
+    <div class="legend-item good"><span class="legend-dot"></span> <b>Раскрыто</b> — раздел подробно описан (70–100%)</div>
+    <div class="legend-item partial"><span class="legend-dot"></span> <b>Частично</b> — основное есть, не хватает деталей (40–69%)</div>
+    <div class="legend-item weak"><span class="legend-dot"></span> <b>Слабо</b> — упоминается, но без конкретики (1–39%)</div>
+    <div class="legend-item missing"><span class="legend-dot"></span> <b>Отсутствует</b> — раздел не найден в тексте (0%)</div>
+  </div>
+</div>
+
+<div class="card help-section">
+  <h2>📄 Поддерживаемые форматы</h2>
+  <ul>
+    <li><b>.docx</b> — документы Microsoft Word (извлекается текст и таблицы)</li>
+    <li><b>.txt</b> — текстовые файлы в кодировке UTF-8</li>
+    <li><b>Вставка текста</b> — прямой ввод или копирование из буфера обмена</li>
+  </ul>
+</div>
+{% endblock %}
