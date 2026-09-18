@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Отчёты по ответственным{% endblock %}
+
+{% block extra_css %}
+.page-header{margin-bottom:24px;}
+.page-header h1{font-size:22px;font-weight:700;color:var(--c-dark);margin-bottom:6px;}
+.page-header p{font-size:13px;color:var(--c-purple-muted);}
+
+.authors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+
+.author-card{text-decoration:none;color:inherit;transition:transform .15s;}
+.author-card:hover{transform:translateY(-2px);}
+.author-card .card{height:100%;display:flex;flex-direction:column;}
+
+.author-top{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.author-avatar{width:48px;height:48px;border-radius:12px;display:flex;
+  align-items:center;justify-content:center;font-size:20px;font-weight:700;
+  color:#fff;flex-shrink:0;}
+.author-avatar.good{background:linear-gradient(135deg,#1A7A42,#2A9A5A);}
+.author-avatar.partial{background:linear-gradient(135deg,var(--c-purple),var(--c-purple2));}
+.author-avatar.weak{background:linear-gradient(135deg,#B8860B,#D4A017);}
+.author-avatar.bad{background:linear-gradient(135deg,#C82828,#E04040);}
+.author-name{font-size:15px;font-weight:700;color:var(--c-dark);}
+.author-projects{font-size:11px;color:var(--c-purple-muted);margin-top:2px;}
+
+.author-stats{display:flex;gap:12px;flex-wrap:wrap;}
+.author-stat{flex:1;min-width:70px;text-align:center;padding:10px 8px;
+  border-radius:8px;background:rgba(117,75,233,.04);}
+.author-stat-num{font-size:18px;font-weight:700;}
+.author-stat-num.good{color:var(--c-green);}
+.author-stat-num.partial{color:var(--c-purple);}
+.author-stat-num.weak{color:var(--c-orange);}
+.author-stat-num.bad{color:var(--c-red);}
+.author-stat-label{font-size:10px;color:var(--c-purple-muted);margin-top:2px;}
+
+.empty-state{text-align:center;padding:60px 20px;}
+.empty-state .icon{font-size:48px;margin-bottom:16px;}
+.empty-state h2{font-size:18px;font-weight:700;color:var(--c-dark);margin-bottom:8px;}
+.empty-state p{font-size:13px;color:var(--c-purple-muted);}
+.empty-state a{color:var(--c-purple);font-weight:600;text-decoration:none;}
+.empty-state a:hover{text-decoration:underline;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Отчёты по ответственным</h1>
+  <p>Средние оценки и история анализов тезисов каждого ответственного</p>
+</div>
+
+{% if authors %}
+<div class="authors-grid">
+  {% for a in authors %}
+  <a href="{{ url_for('report_author', author=a.author) }}" class="author-card">
+    <div class="card">
+      <div class="author-top">
+        <div class="author-avatar {{ a.verdict_class }}">{{ a.author[0] }}</div>
+        <div>
+          <div class="author-name">{{ a.author }}</div>
+          <div class="author-projects">
+            {% if a.projects %}{{ a.projects|join(', ') }}{% else %}—{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="author-stats">
+        <div class="author-stat">
+          <div class="author-stat-num {{ a.verdict_class }}">{{ a.avg_score }}</div>
+          <div class="author-stat-label">Средний балл</div>
+        </div>
+        <div class="author-stat">
+          <div class="author-stat-num" style="color:var(--c-dark)">{{ a.count }}</div>
+          <div class="author-stat-label">Анализов</div>
+        </div>
+        <div class="author-stat">
+          <div class="author-stat-num" style="color:var(--c-dark);font-size:13px">{{ a.last_date }}</div>
+          <div class="author-stat-label">Последний</div>
+        </div>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+  <div class="icon">📊</div>
+  <h2>Нет данных</h2>
+  <p>Проведите <a href="{{ url_for('index') }}">анализ тезисов</a>, чтобы начать собирать историю</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,6 +1,7 @@
 """
 Веб-приложение «Анализ тезисов» — Flask.
 Загрузка текста/docx → анализ по чек-листу → результат.
+История анализов и отчёты по ответственным.
 """
 
 import os
@@ -8,6 +9,7 @@ import uuid
 from flask import Flask, render_template, request, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from text_analyzer import analyze_text, read_docx
+import history
 
 
 class PrefixMiddleware:
@@ -87,13 +89,96 @@ def analyze():
         return redirect(url_for('index'))
 
     author = request.form.get('author', '').strip() or 'Не указан'
+    project = request.form.get('project', '').strip() or 'Не указан'
 
     result = analyze_text(text, mode=mode)
     result['source_name'] = source_name
     result['author'] = author
+    result['project'] = project
     result['original_text'] = text[:3000] + ('...' if len(text) > 3000 else '')
 
+    history.save_analysis(
+        author=author,
+        project=project,
+        source_name=source_name,
+        mode=result['mode'],
+        mode_label=result['mode_label'],
+        result=result,
+        original_text=text,
+    )
+
     return render_template('result.html', result=result)
+
+
+@app.route('/reports')
+def reports():
+    authors = history.get_authors_summary()
+    return render_template('reports.html', authors=authors)
+
+
+@app.route('/report/<path:author>')
+def report_author(author):
+    entries = history.get_author_history(author)
+    if not entries:
+        flash(f'Нет данных для «{author}»', 'error')
+        return redirect(url_for('reports'))
+
+    total = sum(e['overall_score'] for e in entries)
+    avg_score = round(total / len(entries), 1)
+
+    if avg_score >= 80:
+        avg_class = 'good'
+    elif avg_score >= 60:
+        avg_class = 'partial'
+    elif avg_score >= 40:
+        avg_class = 'weak'
+    else:
+        avg_class = 'bad'
+
+    section_avgs = {}
+    for entry in entries:
+        for sec in entry.get('sections', []):
+            key = sec['num']
+            if key not in section_avgs:
+                section_avgs[key] = {
+                    'num': sec['num'],
+                    'title': sec['title'],
+                    'scores': [],
+                }
+            section_avgs[key]['scores'].append(sec['score'])
+
+    for v in section_avgs.values():
+        v['avg'] = round(sum(v['scores']) / len(v['scores']), 1)
+        if v['avg'] >= 70:
+            v['status'] = 'good'
+        elif v['avg'] >= 40:
+            v['status'] = 'partial'
+        elif v['avg'] > 0:
+            v['status'] = 'weak'
+        else:
+            v['status'] = 'not_found'
+
+    section_list = sorted(section_avgs.values(), key=lambda x: x['num'])
+
+    projects = list({e['project'] for e in entries if e.get('project') and e['project'] != 'Не указан'})
+
+    total_stats = {'good': 0, 'partial': 0, 'weak': 0, 'missing': 0}
+    for entry in entries:
+        s = entry.get('stats', {})
+        total_stats['good'] += s.get('good', 0)
+        total_stats['partial'] += s.get('partial', 0)
+        total_stats['weak'] += s.get('weak', 0)
+        total_stats['missing'] += s.get('missing', 0)
+
+    return render_template('report_author.html',
+                           author=author,
+                           entries=entries,
+                           avg_score=avg_score,
+                           avg_class=avg_class,
+                           count=len(entries),
+                           section_avgs=section_list,
+                           projects=projects,
+                           total_stats=total_stats)
 
 
 @app.route('/help')

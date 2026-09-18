@@ -13,7 +13,9 @@ services:
       - URL_PREFIX=/tezisy
     volumes:
       - uploads:/app/uploads
+      - data:/app/data
     restart: unless-stopped
 
 volumes:
   uploads:
+  data:

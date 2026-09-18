@@ -91,6 +91,7 @@ body{background:var(--bg);color:var(--c-dark);font-size:14px;min-height:100vh;}
   <div class="hdr-title"><a href="{{ url_for('index') }}">Анализ тезисов</a></div>
   <div class="hdr-nav">
     <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Анализ</a>
+    <a href="{{ url_for('reports') }}" class="{% if request.endpoint in ('reports', 'report_author') %}active{% endif %}">Отчёты</a>
     <a href="{{ url_for('help_page') }}" class="{% if request.endpoint == 'help_page' %}active{% endif %}">Справка</a>
   </div>
   <div class="hdr-sub">MR Group</div>

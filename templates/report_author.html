@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}{{ author }} — Отчёт{% endblock %}
+
+{% block extra_css %}
+.report-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+.report-header h1{font-size:22px;font-weight:700;color:var(--c-dark);flex:1;}
+.back-btn{padding:8px 18px;border:1px solid var(--border);border-radius:8px;
+  color:var(--c-purple);font-size:13px;font-weight:600;text-decoration:none;
+  background:rgba(117,75,233,.04);transition:all .15s;font-family:inherit;}
+.back-btn:hover{background:rgba(117,75,233,.10);border-color:var(--c-purple);}
+
+.summary-row{display:grid;grid-template-columns:200px 1fr;gap:16px;margin-bottom:20px;}
+
+.score-card{text-align:center;padding:28px 20px;}
+.score-ring{width:110px;height:110px;margin:0 auto 12px;position:relative;}
+.score-ring svg{width:110px;height:110px;transform:rotate(-90deg);}
+.score-ring circle{fill:none;stroke-width:8;stroke-linecap:round;}
+.score-ring .bg{stroke:rgba(117,75,233,.10);}
+.score-ring .fg{transition:stroke-dashoffset .8s ease;}
+.score-ring .fg.good{stroke:var(--c-green);}
+.score-ring .fg.partial{stroke:var(--c-purple);}
+.score-ring .fg.weak{stroke:var(--c-orange);}
+.score-ring .fg.bad{stroke:var(--c-red);}
+.score-value{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:26px;font-weight:700;color:var(--c-dark);}
+.score-sub{font-size:12px;color:var(--c-purple-muted);}
+
+.section-avg-row{display:flex;align-items:center;padding:10px 0;
+  border-bottom:1px solid rgba(117,75,233,.08);}
+.section-avg-row:last-child{border-bottom:none;}
+.section-avg-num{font-size:12px;font-weight:700;color:var(--c-purple);
+  background:rgba(117,75,233,.08);padding:3px 8px;border-radius:6px;
+  min-width:36px;text-align:center;flex-shrink:0;}
+.section-avg-title{flex:1;font-size:13px;font-weight:600;color:var(--c-dark);margin:0 14px;}
+.section-avg-bar{width:100px;height:6px;border-radius:3px;background:rgba(117,75,233,.08);
+  overflow:hidden;flex-shrink:0;margin-right:12px;}
+.section-avg-bar-fill{height:100%;border-radius:3px;}
+.section-avg-bar-fill.good{background:var(--c-green);}
+.section-avg-bar-fill.partial{background:var(--c-purple);}
+.section-avg-bar-fill.weak{background:var(--c-orange);}
+.section-avg-bar-fill.not_found{background:var(--c-red);}
+.section-avg-score{font-size:13px;font-weight:700;min-width:36px;text-align:right;flex-shrink:0;}
+.section-avg-score.good{color:var(--c-green);}
+.section-avg-score.partial{color:var(--c-purple);}
+.section-avg-score.weak{color:var(--c-orange);}
+.section-avg-score.not_found{color:var(--c-red);}
+.section-avg-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;
+  flex-shrink:0;margin-left:8px;white-space:nowrap;}
+.section-avg-badge.good{background:var(--bg-green);color:var(--c-green);}
+.section-avg-badge.partial{background:rgba(117,75,233,.08);color:var(--c-purple);}
+.section-avg-badge.weak{background:var(--bg-orange);color:var(--c-orange);}
+.section-avg-badge.not_found{background:var(--bg-red);color:var(--c-red);}
+
+.history-title{font-size:16px;font-weight:700;color:var(--c-dark);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;}
+
+.entry-card{margin-bottom:12px;cursor:pointer;transition:all .15s;}
+.entry-card:hover{box-shadow:var(--shadow-h);}
+.entry-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.entry-score-badge{width:44px;height:44px;border-radius:10px;display:flex;
+  align-items:center;justify-content:center;font-size:16px;font-weight:700;
+  color:#fff;flex-shrink:0;}
+.entry-score-badge.good{background:var(--c-green);}
+.entry-score-badge.partial{background:var(--c-purple);}
+.entry-score-badge.weak{background:var(--c-orange);}
+.entry-score-badge.bad{background:var(--c-red);}
+.entry-info{flex:1;min-width:0;}
+.entry-project{font-size:14px;font-weight:600;color:var(--c-dark);}
+.entry-meta{font-size:11px;color:var(--c-purple-muted);margin-top:2px;}
+.entry-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.entry-tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:5px;
+  background:var(--bg-gray);color:var(--c-purple-muted);}
+
+.entry-details{display:none;margin-top:14px;padding-top:14px;
+  border-top:1px solid rgba(117,75,233,.08);}
+.entry-card.open .entry-details{display:block;}
+
+.entry-section-row{display:flex;align-items:center;padding:10px 0;
+  border-bottom:1px solid rgba(117,75,233,.08);}
+.entry-section-row:last-child{border-bottom:none;}
+.entry-sec-num{font-size:12px;font-weight:700;color:var(--c-purple);
+  background:rgba(117,75,233,.08);padding:3px 8px;border-radius:6px;
+  min-width:36px;text-align:center;flex-shrink:0;}
+.entry-sec-info{flex:1;margin:0 14px;}
+.entry-sec-title{font-size:13px;font-weight:600;color:var(--c-dark);}
+.entry-sec-desc{font-size:11px;color:var(--c-purple-muted);margin-top:2px;}
+.entry-sec-bar{width:100px;height:6px;border-radius:3px;background:rgba(117,75,233,.08);
+  overflow:hidden;flex-shrink:0;margin-right:12px;}
+.entry-sec-bar-fill{height:100%;border-radius:3px;}
+.entry-sec-bar-fill.good{background:var(--c-green);}
+.entry-sec-bar-fill.partial{background:var(--c-purple);}
+.entry-sec-bar-fill.weak{background:var(--c-orange);}
+.entry-sec-bar-fill.not_found{background:var(--c-red);}
+.entry-sec-score{font-size:13px;font-weight:700;min-width:36px;text-align:right;flex-shrink:0;}
+.entry-sec-score.good{color:var(--c-green);}
+.entry-sec-score.partial{color:var(--c-purple);}
+.entry-sec-score.weak{color:var(--c-orange);}
+.entry-sec-score.not_found{color:var(--c-red);}
+.entry-sec-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;
+  flex-shrink:0;margin-left:8px;white-space:nowrap;}
+.entry-sec-badge.good{background:var(--bg-green);color:var(--c-green);}
+.entry-sec-badge.partial{background:rgba(117,75,233,.08);color:var(--c-purple);}
+.entry-sec-badge.weak{background:var(--bg-orange);color:var(--c-orange);}
+.entry-sec-badge.not_found{background:var(--bg-red);color:var(--c-red);}
+
+.chevron{font-size:16px;color:var(--c-purple-muted);transition:transform .2s;flex-shrink:0;}
+.entry-card.open .chevron{transform:rotate(90deg);}
+
+.text-toggle{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 14px;
+  border:1px solid var(--border);border-radius:8px;background:rgba(117,75,233,.03);
+  color:var(--c-purple);font-size:12px;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:all .15s;}
+.text-toggle:hover{background:rgba(117,75,233,.08);border-color:var(--c-purple);}
+.text-preview{max-height:400px;overflow-y:auto;padding:14px;margin-top:8px;
+  border-radius:10px;background:rgba(117,75,233,.03);border:1px solid var(--border);
+  font-size:12px;line-height:1.7;color:var(--c-dark2);white-space:pre-wrap;
+  word-break:break-word;display:none;}
+.text-preview.show{display:block;}
+
+.meta-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.meta-tag{font-size:12px;font-weight:500;padding:5px 12px;border-radius:8px;
+  background:var(--bg-gray);color:var(--c-purple-muted);}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-box{text-align:center;padding:14px;border-radius:10px;}
+.stat-box.good{background:var(--bg-green);color:var(--c-green);}
+.stat-box.partial{background:rgba(117,75,233,.08);color:var(--c-purple);}
+.stat-box.weak{background:var(--bg-orange);color:var(--c-orange);}
+.stat-box.missing{background:var(--bg-red);color:var(--c-red);}
+.stat-num{font-size:24px;font-weight:700;}
+.stat-label{font-size:11px;font-weight:500;margin-top:2px;}
+
+.entry-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  margin-bottom:12px;}
+.entry-stat-box{text-align:center;padding:10px 6px;border-radius:8px;}
+.entry-stat-box.good{background:var(--bg-green);color:var(--c-green);}
+.entry-stat-box.partial{background:rgba(117,75,233,.08);color:var(--c-purple);}
+.entry-stat-box.weak{background:var(--bg-orange);color:var(--c-orange);}
+.entry-stat-box.missing{background:var(--bg-red);color:var(--c-red);}
+.entry-stat-num{font-size:18px;font-weight:700;}
+.entry-stat-label{font-size:10px;font-weight:500;margin-top:1px;}
+
+@media(max-width:700px){
+  .summary-row{grid-template-columns:1fr;}
+  .report-header{flex-direction:column;align-items:flex-start;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .entry-stats-row{grid-template-columns:repeat(2,1fr);}
+}
+{% endblock %}
+
+{% block content %}
+<div class="report-header">
+  <h1>{{ author }}</h1>
+  <a href="{{ url_for('reports') }}" class="back-btn">← Все отчёты</a>
+</div>
+
+<div class="meta-row">
+  <span class="meta-tag">📊 {{ count }} анализ{{ 'ов' if count > 4 else ('а' if 1 < count < 5 else '') }}</span>
+  {% for p in projects %}
+  <span class="meta-tag">🏗 {{ p }}</span>
+  {% endfor %}
+</div>
+
+<div class="summary-row">
+  <!-- Средний балл -->
+  <div class="card score-card">
+    {% set circumference = 311.018 %}
+    {% set offset = circumference - (circumference * avg_score / 100) %}
+    <div class="score-ring">
+      <svg viewBox="0 0 110 110">
+        <circle class="bg" cx="55" cy="55" r="49.5"/>
+        <circle class="fg {{ avg_class }}" cx="55" cy="55" r="49.5"
+          stroke-dasharray="{{ circumference }}"
+          stroke-dashoffset="{{ offset }}"/>
+      </svg>
+      <div class="score-value">{{ avg_score|round|int }}</div>
+    </div>
+    <div class="score-sub">Средний балл</div>
+  </div>
+
+  <!-- Средние по разделам -->
+  <div class="card">
+    <div class="card-title">Средние оценки по разделам</div>
+    {% for s in section_avgs %}
+    <div class="section-avg-row">
+      <span class="section-avg-num">{{ s.num }}</span>
+      <span class="section-avg-title">{{ s.title }}</span>
+      <div class="section-avg-bar">
+        <div class="section-avg-bar-fill {{ s.status }}" style="width:{{ s.avg }}%"></div>
+      </div>
+      <span class="section-avg-score {{ s.status }}">{{ s.avg|round|int }}%</span>
+      <span class="section-avg-badge {{ s.status }}">
+        {% if s.status == 'good' %}✓ Раскрыто
+        {% elif s.status == 'partial' %}~ Частично
+        {% elif s.status == 'weak' %}! Слабо
+        {% else %}✗ Нет{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Сводная статистика -->
+<div class="stats-row">
+  <div class="stat-box good">
+    <div class="stat-num">{{ total_stats.good }}</div>
+    <div class="stat-label">Раскрыто</div>
+  </div>
+  <div class="stat-box partial">
+    <div class="stat-num">{{ total_stats.partial }}</div>
+    <div class="stat-label">Частично</div>
+  </div>
+  <div class="stat-box weak">
+    <div class="stat-num">{{ total_stats.weak }}</div>
+    <div class="stat-label">Слабо</div>
+  </div>
+  <div class="stat-box missing">
+    <div class="stat-num">{{ total_stats.missing }}</div>
+    <div class="stat-label">Отсутствует</div>
+  </div>
+</div>
+
+<!-- История анализов -->
+<div class="history-title">История анализов</div>
+
+{% for e in entries %}
+<div class="card entry-card" onclick="this.classList.toggle('open')">
+  <div class="entry-top">
+    <div class="entry-score-badge {{ e.verdict_class }}">{{ e.overall_score|round|int }}</div>
+    <div class="entry-info">
+      <div class="entry-project">{{ e.project }}</div>
+      <div class="entry-meta">{{ e.timestamp[:10] }} · {{ e.source_name }} · {{ e.mode_label }}</div>
+      <div class="entry-tags">
+        <span class="entry-tag">✓ {{ e.stats.good }}</span>
+        <span class="entry-tag">~ {{ e.stats.partial }}</span>
+        <span class="entry-tag">! {{ e.stats.weak }}</span>
+        <span class="entry-tag">✗ {{ e.stats.missing }}</span>
+      </div>
+    </div>
+    <span class="chevron">›</span>
+  </div>
+
+  <div class="entry-details">
+    <div class="entry-stats-row">
+      <div class="entry-stat-box good">
+        <div class="entry-stat-num">{{ e.stats.good }}</div>
+        <div class="entry-stat-label">Раскрыто</div>
+      </div>
+      <div class="entry-stat-box partial">
+        <div class="entry-stat-num">{{ e.stats.partial }}</div>
+        <div class="entry-stat-label">Частично</div>
+      </div>
+      <div class="entry-stat-box weak">
+        <div class="entry-stat-num">{{ e.stats.weak }}</div>
+        <div class="entry-stat-label">Слабо</div>
+      </div>
+      <div class="entry-stat-box missing">
+        <div class="entry-stat-num">{{ e.stats.missing }}</div>
+        <div class="entry-stat-label">Отсутствует</div>
+      </div>
+    </div>
+    {% for s in e.sections %}
+    <div class="entry-section-row">
+      <span class="entry-sec-num">{{ s.num }}</span>
+      <div class="entry-sec-info">
+        <div class="entry-sec-title">{{ s.title }}</div>
+        <div class="entry-sec-desc">{{ s.description }}</div>
+      </div>
+      <div class="entry-sec-bar">
+        <div class="entry-sec-bar-fill {{ s.status }}" style="width:{{ s.score }}%"></div>
+      </div>
+      <span class="entry-sec-score {{ s.status }}">{{ s.score|round|int }}%</span>
+      <span class="entry-sec-badge {{ s.status }}">
+        {% if s.status == 'good' %}✓ Раскрыто
+        {% elif s.status == 'partial' %}~ Частично
+        {% elif s.status == 'weak' %}! Слабо
+        {% else %}✗ Нет{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+    {% if e.original_text %}
+    <button class="text-toggle" onclick="event.stopPropagation();this.nextElementSibling.classList.toggle('show');this.textContent=this.nextElementSibling.classList.contains('show')?'▲ Скрыть текст':'▼ Показать текст тезисов'">▼ Показать текст тезисов</button>
+    <div class="text-preview">{{ e.original_text }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

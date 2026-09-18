@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py text_analyzer.py ./
+COPY app.py text_analyzer.py history.py ./
 COPY templates/ templates/
 COPY static/ static/
 
-RUN mkdir -p uploads
+RUN mkdir -p uploads data
 
 EXPOSE 5000
 
