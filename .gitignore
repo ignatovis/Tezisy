@@ -4,8 +4,10 @@
 *.html
 !templates/*.html
 *.json
+!data/history.json
 *.docx
 __pycache__/
 *.pyc
 uploads/
 *.ttf
+Thumbs.db
