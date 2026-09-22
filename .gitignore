@@ -5,6 +5,7 @@
 !templates/*.html
 *.json
 !data/history.json
+!data/colleagues.json
 *.docx
 __pycache__/
 *.pyc

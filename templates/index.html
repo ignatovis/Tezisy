@@ -119,8 +119,12 @@
       <div class="card-title">Автор и проект</div>
       <div class="form-group">
         <label class="form-label">Автор тезисов</label>
-        <input type="text" class="author-input" name="author"
-          placeholder="Фамилия И.О.">
+        <select class="author-input" name="author" id="authorSelect">
+          <option value="">— Выберите автора —</option>
+          {% for c in colleagues %}
+          <option value="{{ c }}">{{ c }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Проект</label>

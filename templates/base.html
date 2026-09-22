@@ -93,6 +93,9 @@ body{background:var(--bg);color:var(--c-dark);font-size:14px;min-height:100vh;}
     <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Анализ</a>
     <a href="{{ url_for('reports') }}" class="{% if request.endpoint in ('reports', 'report_author') %}active{% endif %}">Отчёты</a>
     <a href="{{ url_for('help_page') }}" class="{% if request.endpoint == 'help_page' %}active{% endif %}">Справка</a>
+    {% if session.get('is_admin') %}
+    <a href="{{ url_for('admin_panel') }}" class="{% if request.endpoint and request.endpoint.startswith('admin') %}active{% endif %}" style="color:rgba(255,200,100,.9)">⚙ Админ</a>
+    {% endif %}
   </div>
   <div class="hdr-sub">MR Group</div>
 </div>

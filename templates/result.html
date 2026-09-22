@@ -184,6 +184,27 @@
   {% endfor %}
 </div>
 
+<!-- Публикация -->
+{% if result.entry_id %}
+<div class="card" style="text-align:center;padding:28px;">
+  <div class="card-title" style="justify-content:center;">Опубликовать результат?</div>
+  <p style="font-size:13px;color:var(--c-purple-muted);margin-bottom:20px;max-width:480px;margin-left:auto;margin-right:auto;">
+    Опубликованные тезисы будут видны руководству в разделе «Отчёты».<br>
+    Если анализ только для себя — оставьте приватным.
+  </p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <form method="POST" action="{{ url_for('publish_entry', entry_id=result.entry_id) }}" style="display:inline;">
+      <button type="submit" class="submit-btn" style="width:auto;padding:12px 32px;font-size:14px;">
+        📢 Опубликовать для руководства
+      </button>
+    </form>
+    <a href="{{ url_for('index') }}" class="back-btn" style="padding:12px 24px;display:inline-flex;align-items:center;">
+      🔒 Оставить приватным
+    </a>
+  </div>
+</div>
+{% endif %}
+
 <!-- Исходный текст -->
 <div class="card">
   <div class="card-title">Исходный текст</div>

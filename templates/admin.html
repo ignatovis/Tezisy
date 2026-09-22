@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Админ-панель{% endblock %}
+
+{% block extra_css %}
+.admin-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+.admin-header h1{font-size:22px;font-weight:700;color:var(--c-dark);flex:1;}
+.logout-btn{padding:8px 18px;border:1px solid var(--border);border-radius:8px;
+  color:var(--c-red);font-size:13px;font-weight:600;text-decoration:none;
+  background:rgba(200,40,40,.04);transition:all .15s;font-family:inherit;}
+.logout-btn:hover{background:rgba(200,40,40,.10);border-color:var(--c-red);}
+
+.tab-nav{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border);}
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:600;color:var(--c-purple-muted);
+  cursor:pointer;border:none;background:none;font-family:inherit;
+  border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.tab-btn:hover{color:var(--c-purple);}
+.tab-btn.active{color:var(--c-purple);border-bottom-color:var(--c-purple);}
+
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.entry-row{display:flex;align-items:center;gap:12px;padding:14px 0;
+  border-bottom:1px solid rgba(117,75,233,.08);flex-wrap:wrap;}
+.entry-row:last-child{border-bottom:none;}
+.entry-score{width:40px;height:40px;border-radius:8px;display:flex;
+  align-items:center;justify-content:center;font-size:14px;font-weight:700;
+  color:#fff;flex-shrink:0;}
+.entry-score.good{background:var(--c-green);}
+.entry-score.partial{background:var(--c-purple);}
+.entry-score.weak{background:var(--c-orange);}
+.entry-score.bad{background:var(--c-red);}
+.entry-details{flex:1;min-width:0;}
+.entry-name{font-size:14px;font-weight:600;color:var(--c-dark);}
+.entry-meta{font-size:11px;color:var(--c-purple-muted);margin-top:2px;}
+.entry-vis{font-size:10px;font-weight:600;padding:3px 8px;border-radius:5px;flex-shrink:0;}
+.entry-vis.published{background:var(--bg-green);color:var(--c-green);}
+.entry-vis.private{background:var(--bg-orange);color:var(--c-orange);}
+
+.action-btns{display:flex;gap:6px;flex-shrink:0;}
+.btn-sm{padding:6px 12px;border:1px solid var(--border);border-radius:6px;
+  font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;
+  text-decoration:none;transition:all .15s;background:rgba(117,75,233,.04);
+  color:var(--c-purple);}
+.btn-sm:hover{background:rgba(117,75,233,.10);border-color:var(--c-purple);}
+.btn-sm.danger{color:var(--c-red);background:rgba(200,40,40,.04);border-color:rgba(200,40,40,.2);}
+.btn-sm.danger:hover{background:rgba(200,40,40,.10);border-color:var(--c-red);}
+.btn-sm.green{color:var(--c-green);background:rgba(26,122,66,.04);border-color:rgba(26,122,66,.2);}
+.btn-sm.green:hover{background:rgba(26,122,66,.10);border-color:var(--c-green);}
+
+.colleague-row{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid rgba(117,75,233,.08);}
+.colleague-row:last-child{border-bottom:none;}
+.colleague-name{flex:1;font-size:14px;font-weight:500;color:var(--c-dark);}
+
+.add-form{display:flex;gap:8px;margin-top:16px;}
+.add-input{flex:1;border:1px solid var(--border);border-radius:8px;padding:10px 14px;
+  font-size:13px;font-family:inherit;background:rgba(117,75,233,.03);
+  outline:none;color:var(--c-dark);}
+.add-input:focus{border-color:var(--c-purple);background:#fff;}
+.add-btn{padding:10px 20px;border:none;border-radius:8px;
+  background:var(--c-purple);color:#fff;font-size:13px;font-weight:600;
+  font-family:inherit;cursor:pointer;transition:all .15s;}
+.add-btn:hover{background:var(--c-purple2);}
+
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.filter-input{flex:1;max-width:300px;border:1px solid var(--border);border-radius:8px;
+  padding:8px 14px;font-size:13px;font-family:inherit;
+  background:rgba(117,75,233,.03);outline:none;color:var(--c-dark);}
+.filter-select{border:1px solid var(--border);border-radius:8px;padding:8px 14px;
+  font-size:13px;font-family:inherit;background:rgba(117,75,233,.03);
+  outline:none;color:var(--c-dark);}
+
+.count-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
+  background:rgba(117,75,233,.10);color:var(--c-purple);margin-left:6px;}
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+  <h1>⚙ Админ-панель</h1>
+  <a href="{{ url_for('admin_logout') }}" class="logout-btn">Выйти</a>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('entries',this)">
+    Записи <span class="count-badge">{{ entries|length }}</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('colleagues',this)">
+    Справочник коллег <span class="count-badge">{{ colleagues|length }}</span>
+  </button>
+</div>
+
+<!-- Записи -->
+<div class="tab-content active" id="tab-entries">
+  <div class="filter-row">
+    <input type="text" class="filter-input" id="filterSearch"
+      placeholder="Поиск по автору, проекту..." oninput="filterEntries()">
+    <select class="filter-select" id="filterVis" onchange="filterEntries()">
+      <option value="">Все</option>
+      <option value="published">Опубликованные</option>
+      <option value="private">Приватные</option>
+    </select>
+  </div>
+
+  <div class="card">
+    {% for e in entries %}
+    <div class="entry-row" data-author="{{ e.author|lower }}" data-project="{{ e.project|lower }}"
+         data-vis="{{ e.get('visibility', 'published') }}">
+      <div class="entry-score {{ e.verdict_class }}">{{ e.overall_score|round|int }}</div>
+      <div class="entry-details">
+        <div class="entry-name">{{ e.author }} — {{ e.project }}</div>
+        <div class="entry-meta">{{ e.timestamp[:16]|replace('T',' ') }} · {{ e.source_name }} · {{ e.mode_label }}</div>
+      </div>
+      <span class="entry-vis {{ e.get('visibility', 'published') }}">
+        {% if e.get('visibility', 'published') == 'published' %}📢 Опубл.{% else %}🔒 Приват{% endif %}
+      </span>
+      <div class="action-btns">
+        {% if e.get('visibility', 'published') == 'private' %}
+        <form method="POST" action="{{ url_for('admin_visibility', entry_id=e.id, visibility='published') }}" style="display:inline;">
+          <button type="submit" class="btn-sm green" title="Опубликовать">📢</button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('admin_visibility', entry_id=e.id, visibility='private') }}" style="display:inline;">
+          <button type="submit" class="btn-sm" title="Скрыть">🔒</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('admin_edit', entry_id=e.id) }}" class="btn-sm">✏ Ред.</a>
+        <form method="POST" action="{{ url_for('admin_delete', entry_id=e.id) }}" style="display:inline;"
+          onsubmit="return confirm('Удалить запись {{ e.author }} ({{ e.timestamp[:10] }})?')">
+          <button type="submit" class="btn-sm danger">🗑</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not entries %}
+    <p style="text-align:center;color:var(--c-purple-muted);padding:20px;">Нет записей</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Справочник коллег -->
+<div class="tab-content" id="tab-colleagues">
+  <div class="card">
+    <div class="card-title">Список коллег</div>
+    {% for c in colleagues %}
+    <div class="colleague-row">
+      <span class="colleague-name">{{ c }}</span>
+      <form method="POST" action="{{ url_for('admin_colleagues') }}" style="display:inline;"
+        onsubmit="return confirm('Удалить «{{ c }}» из справочника?')">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="name" value="{{ c }}">
+        <button type="submit" class="btn-sm danger">🗑 Удалить</button>
+      </form>
+    </div>
+    {% endfor %}
+    {% if not colleagues %}
+    <p style="color:var(--c-purple-muted);">Справочник пуст</p>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('admin_colleagues') }}" class="add-form">
+      <input type="hidden" name="action" value="add">
+      <input type="text" class="add-input" name="name" placeholder="Фамилия И.О." required>
+      <button type="submit" class="add-btn">+ Добавить</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function filterEntries() {
+  const q = document.getElementById('filterSearch').value.toLowerCase();
+  const vis = document.getElementById('filterVis').value;
+  document.querySelectorAll('.entry-row').forEach(row => {
+    const matchText = !q || row.dataset.author.includes(q) || row.dataset.project.includes(q);
+    const matchVis = !vis || row.dataset.vis === vis;
+    row.style.display = (matchText && matchVis) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

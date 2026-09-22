@@ -11,8 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py text_analyzer.py history.py ./
 COPY templates/ templates/
 COPY static/ static/
+COPY data/colleagues.json data/
 
-RUN mkdir -p uploads data
+RUN mkdir -p uploads
 
 EXPOSE 5000
 

@@ -6,7 +6,8 @@
 
 import os
 import uuid
-from flask import Flask, render_template, request, redirect, url_for, flash
+import functools
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.utils import secure_filename
 from text_analyzer import analyze_text, read_docx
 import history
@@ -35,15 +36,26 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {'docx', 'txt'}
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'tezisy-admin-2024')
 
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def admin_required(f):
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('is_admin'):
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated
+
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    colleagues = history.load_colleagues()
+    return render_template('index.html', colleagues=colleagues)
 
 
 @app.route('/analyze', methods=['POST'])
@@ -97,7 +109,7 @@ def analyze():
     result['project'] = project
     result['original_text'] = text[:3000] + ('...' if len(text) > 3000 else '')
 
-    history.save_analysis(
+    entry_id = history.save_analysis(
         author=author,
         project=project,
         source_name=source_name,
@@ -105,9 +117,18 @@ def analyze():
         mode_label=result['mode_label'],
         result=result,
         original_text=text,
+        visibility='private',
     )
+    result['entry_id'] = entry_id
 
     return render_template('result.html', result=result)
+
+
+@app.route('/publish/<entry_id>', methods=['POST'])
+def publish_entry(entry_id):
+    history.set_visibility(entry_id, 'published')
+    flash('Тезисы опубликованы — теперь они видны в отчётах для руководства', 'success')
+    return redirect(url_for('reports'))
 
 
 @app.route('/reports')
@@ -184,6 +205,94 @@ def report_author(author):
 @app.route('/help')
 def help_page():
     return render_template('help.html')
+
+
+# --- Admin panel ---
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        if request.form.get('password') == ADMIN_PASSWORD:
+            session['is_admin'] = True
+            return redirect(url_for('admin_panel'))
+        flash('Неверный пароль', 'error')
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('is_admin', None)
+    return redirect(url_for('index'))
+
+
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    entries = history.get_all()
+    entries.sort(key=lambda x: x['timestamp'], reverse=True)
+    colleagues = history.load_colleagues()
+    return render_template('admin.html', entries=entries, colleagues=colleagues)
+
+
+@app.route('/admin/delete/<entry_id>', methods=['POST'])
+@admin_required
+def admin_delete(entry_id):
+    history.delete_entry(entry_id)
+    flash('Запись удалена', 'success')
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/edit/<entry_id>', methods=['GET', 'POST'])
+@admin_required
+def admin_edit(entry_id):
+    entry = history.get_entry(entry_id)
+    if not entry:
+        flash('Запись не найдена', 'error')
+        return redirect(url_for('admin_panel'))
+
+    if request.method == 'POST':
+        updates = {
+            'author': request.form.get('author', entry['author']).strip(),
+            'project': request.form.get('project', entry['project']).strip(),
+            'visibility': request.form.get('visibility', entry.get('visibility', 'published')),
+        }
+        history.update_entry(entry_id, updates)
+        flash('Запись обновлена', 'success')
+        return redirect(url_for('admin_panel'))
+
+    colleagues = history.load_colleagues()
+    return render_template('admin_edit.html', entry=entry, colleagues=colleagues)
+
+
+@app.route('/admin/visibility/<entry_id>/<visibility>', methods=['POST'])
+@admin_required
+def admin_visibility(entry_id, visibility):
+    if visibility in ('published', 'private'):
+        history.set_visibility(entry_id, visibility)
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/colleagues', methods=['POST'])
+@admin_required
+def admin_colleagues():
+    action = request.form.get('action')
+    if action == 'add':
+        name = request.form.get('name', '').strip()
+        if name:
+            history.add_colleague(name)
+            flash(f'Добавлен: {name}', 'success')
+    elif action == 'delete':
+        name = request.form.get('name', '').strip()
+        colleagues = history.load_colleagues()
+        colleagues = [c for c in colleagues if c != name]
+        history.save_colleagues(colleagues)
+        flash(f'Удалён: {name}', 'success')
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/api/colleagues')
+def api_colleagues():
+    return jsonify(history.load_colleagues())
 
 
 if __name__ == '__main__':

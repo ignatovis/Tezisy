@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Редактирование записи{% endblock %}
+
+{% block extra_css %}
+.edit-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+.edit-header h1{font-size:22px;font-weight:700;color:var(--c-dark);flex:1;}
+.back-btn{padding:8px 18px;border:1px solid var(--border);border-radius:8px;
+  color:var(--c-purple);font-size:13px;font-weight:600;text-decoration:none;
+  background:rgba(117,75,233,.04);transition:all .15s;font-family:inherit;}
+.back-btn:hover{background:rgba(117,75,233,.10);border-color:var(--c-purple);}
+
+.form-group{margin-bottom:20px;}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--c-dark2);
+  margin-bottom:8px;letter-spacing:.02em;}
+.form-input{width:100%;border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;font-size:13px;font-family:inherit;
+  background:rgba(117,75,233,.03);outline:none;
+  transition:border-color .15s,background .15s;color:var(--c-dark);}
+.form-input:focus{border-color:var(--c-purple);background:#fff;
+  box-shadow:0 0 0 3px rgba(117,75,233,.08);}
+
+.vis-toggle{display:flex;gap:8px;margin-bottom:20px;}
+.vis-btn{flex:1;padding:12px;border:2px solid var(--border);border-radius:10px;
+  background:rgba(117,75,233,.04);cursor:pointer;text-align:center;
+  transition:all .15s;font-family:inherit;}
+.vis-btn:hover{border-color:var(--c-purple);background:rgba(117,75,233,.08);}
+.vis-btn.active{border-color:var(--c-purple2);background:rgba(107,59,255,.10);
+  box-shadow:0 0 0 1px var(--c-purple2);}
+.vis-btn input{display:none;}
+.vis-name{font-size:14px;font-weight:700;color:var(--c-dark);}
+.vis-desc{font-size:11px;color:var(--c-purple-muted);margin-top:4px;}
+
+.save-btn{width:100%;padding:14px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,var(--c-purple) 0%,var(--c-purple2) 100%);
+  color:#fff;font-size:15px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 16px rgba(117,75,233,.25);}
+.save-btn:hover{transform:translateY(-1px);
+  box-shadow:0 6px 24px rgba(117,75,233,.35);}
+
+.meta-info{font-size:12px;color:var(--c-purple-muted);margin-bottom:4px;}
+{% endblock %}
+
+{% block content %}
+<div class="edit-header">
+  <h1>Редактирование записи</h1>
+  <a href="{{ url_for('admin_panel') }}" class="back-btn">← Назад</a>
+</div>
+
+<div class="card">
+  <div class="meta-info">ID: {{ entry.id }} · Дата: {{ entry.timestamp[:16]|replace('T',' ') }}</div>
+  <div class="meta-info">Файл: {{ entry.source_name }} · Режим: {{ entry.mode_label }} · Балл: {{ entry.overall_score|round|int }}</div>
+</div>
+
+<form method="POST">
+  <div class="card">
+    <div class="card-title">Данные</div>
+    <div class="form-group">
+      <label class="form-label">Автор</label>
+      <select class="form-input" name="author">
+        {% for c in colleagues %}
+        <option value="{{ c }}" {% if c == entry.author %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+        {% if entry.author not in colleagues %}
+        <option value="{{ entry.author }}" selected>{{ entry.author }}</option>
+        {% endif %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Проект</label>
+      <input type="text" class="form-input" name="project" value="{{ entry.project }}">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Видимость</div>
+    <div class="vis-toggle">
+      <label class="vis-btn {% if entry.get('visibility', 'published') == 'published' %}active{% endif %}">
+        <input type="radio" name="visibility" value="published"
+          {% if entry.get('visibility', 'published') == 'published' %}checked{% endif %}>
+        <div class="vis-name">📢 Опубликовано</div>
+        <div class="vis-desc">Видно в отчётах для руководства</div>
+      </label>
+      <label class="vis-btn {% if entry.get('visibility', 'published') == 'private' %}active{% endif %}">
+        <input type="radio" name="visibility" value="private"
+          {% if entry.get('visibility', 'published') == 'private' %}checked{% endif %}>
+        <div class="vis-name">🔒 Приватно</div>
+        <div class="vis-desc">Только для автора</div>
+      </label>
+    </div>
+  </div>
+
+  <button type="submit" class="save-btn">Сохранить изменения</button>
+</form>
+
+<script>
+document.querySelectorAll('.vis-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.vis-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+</script>
+{% endblock %}

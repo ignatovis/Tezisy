@@ -8,7 +8,9 @@ import uuid
 from datetime import datetime
 from threading import Lock
 
-HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'history.json')
+_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+HISTORY_FILE = os.path.join(_DATA_DIR, 'history.json')
+COLLEAGUES_FILE = os.path.join(_DATA_DIR, 'colleagues.json')
 _lock = Lock()
 
 
@@ -31,7 +33,7 @@ def _save(data):
 
 
 def save_analysis(author, project, source_name, mode, mode_label, result,
-                   original_text=''):
+                   original_text='', visibility='published'):
     entry = {
         'id': uuid.uuid4().hex[:12],
         'timestamp': datetime.now().isoformat(timespec='seconds'),
@@ -47,6 +49,7 @@ def save_analysis(author, project, source_name, mode, mode_label, result,
         'stats': result['stats'],
         'text_stats': result['text_stats'],
         'original_text': original_text[:5000],
+        'visibility': visibility,
     }
     with _lock:
         data = _load()
@@ -60,8 +63,10 @@ def get_all():
         return _load()
 
 
-def get_authors_summary():
+def get_authors_summary(include_private=False):
     data = _load()
+    if not include_private:
+        data = [e for e in data if e.get('visibility', 'published') == 'published']
     authors = {}
     for entry in data:
         name = entry['author']
@@ -98,11 +103,35 @@ def get_authors_summary():
     return result
 
 
-def get_author_history(author):
+def get_author_history(author, include_private=False):
     data = _load()
     entries = [e for e in data if e['author'] == author]
+    if not include_private:
+        entries = [e for e in entries if e.get('visibility', 'published') == 'published']
     entries.sort(key=lambda x: x['timestamp'], reverse=True)
     return entries
+
+
+def get_entry(entry_id):
+    data = _load()
+    for e in data:
+        if e['id'] == entry_id:
+            return e
+    return None
+
+
+def update_entry(entry_id, updates):
+    with _lock:
+        data = _load()
+        for e in data:
+            if e['id'] == entry_id:
+                e.update(updates)
+                break
+        _save(data)
+
+
+def set_visibility(entry_id, visibility):
+    update_entry(entry_id, {'visibility': visibility})
 
 
 def delete_entry(entry_id):
@@ -110,3 +139,24 @@ def delete_entry(entry_id):
         data = _load()
         data = [e for e in data if e['id'] != entry_id]
         _save(data)
+
+
+def load_colleagues():
+    if not os.path.exists(COLLEAGUES_FILE):
+        return []
+    with open(COLLEAGUES_FILE, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return sorted(data.get('colleagues', []))
+
+
+def save_colleagues(colleagues):
+    os.makedirs(os.path.dirname(COLLEAGUES_FILE), exist_ok=True)
+    with open(COLLEAGUES_FILE, 'w', encoding='utf-8') as f:
+        json.dump({'colleagues': sorted(set(colleagues))}, f, ensure_ascii=False, indent=2)
+
+
+def add_colleague(name):
+    colleagues = load_colleagues()
+    if name not in colleagues:
+        colleagues.append(name)
+        save_colleagues(colleagues)

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Вход в админ-панель{% endblock %}
+
+{% block extra_css %}
+.login-form{max-width:400px;margin:60px auto 0;}
+.login-form h1{font-size:22px;font-weight:700;color:var(--c-dark);margin-bottom:20px;text-align:center;}
+.login-input{width:100%;border:1px solid var(--border);border-radius:10px;
+  padding:12px 16px;font-size:14px;font-family:inherit;
+  background:rgba(117,75,233,.03);outline:none;
+  transition:border-color .15s,background .15s;color:var(--c-dark);margin-bottom:16px;}
+.login-input:focus{border-color:var(--c-purple);background:#fff;
+  box-shadow:0 0 0 3px rgba(117,75,233,.08);}
+.login-btn{width:100%;padding:14px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,var(--c-purple) 0%,var(--c-purple2) 100%);
+  color:#fff;font-size:15px;font-weight:700;font-family:inherit;
+  cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 16px rgba(117,75,233,.25);}
+.login-btn:hover{transform:translateY(-1px);
+  box-shadow:0 6px 24px rgba(117,75,233,.35);}
+{% endblock %}
+
+{% block content %}
+<div class="login-form">
+  <div class="card">
+    <h1>⚙ Админ-панель</h1>
+    <form method="POST">
+      <input type="password" class="login-input" name="password"
+        placeholder="Пароль" autofocus required>
+      <button type="submit" class="login-btn">Войти</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
