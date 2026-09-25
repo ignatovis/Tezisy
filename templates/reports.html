@@ -67,8 +67,8 @@
           <div class="author-stat-label">Средний балл</div>
         </div>
         <div class="author-stat">
-          <div class="author-stat-num" style="color:var(--c-dark)">{{ a.count }}</div>
-          <div class="author-stat-label">Анализов</div>
+          <div class="author-stat-num" style="color:var(--c-dark)">{{ a.count }}{% if a.count_old %}<span style="font-size:11px;color:var(--c-purple-muted);font-weight:400"> +{{ a.count_old }}</span>{% endif %}</div>
+          <div class="author-stat-label">Анализов{% if a.count_old %} (ранее){% endif %}</div>
         </div>
         <div class="author-stat">
           <div class="author-stat-num" style="color:var(--c-dark);font-size:13px">{{ a.last_date }}</div>

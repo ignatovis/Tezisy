@@ -140,6 +140,14 @@
 .entry-stat-num{font-size:18px;font-weight:700;}
 .entry-stat-label{font-size:10px;font-weight:500;margin-top:1px;}
 
+.period-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.period-tab{padding:8px 18px;border:1px solid var(--border);border-radius:8px;
+  background:rgba(117,75,233,.03);color:var(--c-purple-muted);font-size:13px;
+  font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+.period-tab:hover{background:rgba(117,75,233,.08);border-color:var(--c-purple);}
+.period-tab.active{background:var(--c-purple);color:#fff;border-color:var(--c-purple);}
+.period-count{font-size:11px;font-weight:400;opacity:.7;margin-left:4px;}
+
 @media(max-width:700px){
   .summary-row{grid-template-columns:1fr;}
   .report-header{flex-direction:column;align-items:flex-start;}
@@ -155,75 +163,92 @@
 </div>
 
 <div class="meta-row">
-  <span class="meta-tag">📊 {{ count }} анализ{{ 'ов' if count > 4 else ('а' if 1 < count < 5 else '') }}</span>
   {% for p in projects %}
   <span class="meta-tag">🏗 {{ p }}</span>
   {% endfor %}
 </div>
 
-<div class="summary-row">
-  <!-- Средний балл -->
-  <div class="card score-card">
-    {% set circumference = 311.018 %}
-    {% set offset = circumference - (circumference * avg_score / 100) %}
-    <div class="score-ring">
-      <svg viewBox="0 0 110 110">
-        <circle class="bg" cx="55" cy="55" r="49.5"/>
-        <circle class="fg {{ avg_class }}" cx="55" cy="55" r="49.5"
-          stroke-dasharray="{{ circumference }}"
-          stroke-dashoffset="{{ offset }}"/>
-      </svg>
-      <div class="score-value">{{ avg_score|round|int }}</div>
-    </div>
-    <div class="score-sub">Средний балл</div>
-  </div>
+<!-- Переключатель периодов -->
+<div class="period-tabs">
+  <button class="period-tab active" data-period="current">Текущий период <span class="period-count">{{ periods.current.count }}</span></button>
+  {% if count_old %}
+  <button class="period-tab" data-period="old">Раньше <span class="period-count">{{ periods.old.count }}</span></button>
+  {% endif %}
+  <button class="period-tab" data-period="all">Всё время <span class="period-count">{{ periods.all.count }}</span></button>
+</div>
 
-  <!-- Средние по разделам -->
-  <div class="card">
-    <div class="card-title">Средние оценки по разделам</div>
-    {% for s in section_avgs %}
-    <div class="section-avg-row">
-      <span class="section-avg-num">{{ s.num }}</span>
-      <span class="section-avg-title">{{ s.title }}</span>
-      <div class="section-avg-bar">
-        <div class="section-avg-bar-fill {{ s.status }}" style="width:{{ s.avg }}%"></div>
+{% macro render_summary(p, pid) %}
+<div class="period-panel" data-period="{{ pid }}" {% if pid != 'current' %}style="display:none"{% endif %}>
+  <div class="summary-row">
+    <div class="card score-card">
+      {% set circumference = 311.018 %}
+      {% set offset = circumference - (circumference * p.avg_score / 100) %}
+      <div class="score-ring">
+        <svg viewBox="0 0 110 110">
+          <circle class="bg" cx="55" cy="55" r="49.5"/>
+          <circle class="fg {{ p.avg_class }}" cx="55" cy="55" r="49.5"
+            stroke-dasharray="{{ circumference }}"
+            stroke-dashoffset="{{ offset }}"/>
+        </svg>
+        <div class="score-value">{{ p.avg_score|round|int }}</div>
       </div>
-      <span class="section-avg-score {{ s.status }}">{{ s.avg|round|int }}%</span>
-      <span class="section-avg-badge {{ s.status }}">
-        {% if s.status == 'good' %}✓ Раскрыто
-        {% elif s.status == 'partial' %}~ Частично
-        {% elif s.status == 'weak' %}! Слабо
-        {% else %}✗ Нет{% endif %}
-      </span>
+      <div class="score-sub">Средний балл ({{ p.count }})</div>
     </div>
-    {% endfor %}
+    <div class="card">
+      <div class="card-title">Средние оценки по разделам</div>
+      {% for s in p.section_avgs %}
+      <div class="section-avg-row">
+        <span class="section-avg-num">{{ s.num }}</span>
+        <span class="section-avg-title">{{ s.title }}</span>
+        <div class="section-avg-bar">
+          <div class="section-avg-bar-fill {{ s.status }}" style="width:{{ s.avg }}%"></div>
+        </div>
+        <span class="section-avg-score {{ s.status }}">{{ s.avg|round|int }}%</span>
+        <span class="section-avg-badge {{ s.status }}">
+          {% if s.status == 'good' %}✓ Раскрыто
+          {% elif s.status == 'partial' %}~ Частично
+          {% elif s.status == 'weak' %}! Слабо
+          {% else %}✗ Нет{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+      {% if not p.section_avgs %}
+      <div style="text-align:center;padding:20px;color:var(--c-purple-muted);font-size:13px;">Нет данных</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box good">
+      <div class="stat-num">{{ p.total_stats.good }}</div>
+      <div class="stat-label">Раскрыто</div>
+    </div>
+    <div class="stat-box partial">
+      <div class="stat-num">{{ p.total_stats.partial }}</div>
+      <div class="stat-label">Частично</div>
+    </div>
+    <div class="stat-box weak">
+      <div class="stat-num">{{ p.total_stats.weak }}</div>
+      <div class="stat-label">Слабо</div>
+    </div>
+    <div class="stat-box missing">
+      <div class="stat-num">{{ p.total_stats.missing }}</div>
+      <div class="stat-label">Отсутствует</div>
+    </div>
   </div>
 </div>
+{% endmacro %}
 
-<!-- Сводная статистика -->
-<div class="stats-row">
-  <div class="stat-box good">
-    <div class="stat-num">{{ total_stats.good }}</div>
-    <div class="stat-label">Раскрыто</div>
-  </div>
-  <div class="stat-box partial">
-    <div class="stat-num">{{ total_stats.partial }}</div>
-    <div class="stat-label">Частично</div>
-  </div>
-  <div class="stat-box weak">
-    <div class="stat-num">{{ total_stats.weak }}</div>
-    <div class="stat-label">Слабо</div>
-  </div>
-  <div class="stat-box missing">
-    <div class="stat-num">{{ total_stats.missing }}</div>
-    <div class="stat-label">Отсутствует</div>
-  </div>
-</div>
+{{ render_summary(periods.current, 'current') }}
+{% if count_old %}
+{{ render_summary(periods.old, 'old') }}
+{% endif %}
+{{ render_summary(periods.all, 'all') }}
 
-<!-- История анализов -->
-<div class="history-title">История анализов</div>
+<!-- История анализов — текущий период -->
+{% if current_entries %}
+<div class="history-title">Текущий период (с {{ score_reset_date }})</div>
 
-{% for e in entries %}
+{% for e in current_entries %}
 <div class="card entry-card" onclick="this.classList.toggle('open')">
   <div class="entry-top">
     <div class="entry-score-badge {{ e.verdict_class }}">{{ e.overall_score|round|int }}</div>
@@ -285,4 +310,94 @@
   </div>
 </div>
 {% endfor %}
+{% else %}
+<div class="history-title">Текущий период (с {{ score_reset_date }})</div>
+<div class="card" style="text-align:center;padding:30px;color:var(--c-purple-muted);font-size:13px;">
+  Нет анализов в текущем периоде
+</div>
+{% endif %}
+
+<!-- Раньше -->
+{% if old_entries %}
+<div class="history-title" style="margin-top:32px;opacity:.6">
+  Раньше
+  <span style="font-size:12px;font-weight:400;color:var(--c-purple-muted)">(не учитывается в оценке)</span>
+</div>
+
+{% for e in old_entries %}
+<div class="card entry-card" style="opacity:.55" onclick="this.classList.toggle('open')">
+  <div class="entry-top">
+    <div class="entry-score-badge" style="background:var(--c-purple-muted)">{{ e.overall_score|round|int }}</div>
+    <div class="entry-info">
+      <div class="entry-project">{{ e.project }}</div>
+      <div class="entry-meta">{{ e.timestamp[:10] }} · {{ e.source_name }} · {{ e.mode_label }}</div>
+      <div class="entry-tags">
+        <span class="entry-tag">✓ {{ e.stats.good }}</span>
+        <span class="entry-tag">~ {{ e.stats.partial }}</span>
+        <span class="entry-tag">! {{ e.stats.weak }}</span>
+        <span class="entry-tag">✗ {{ e.stats.missing }}</span>
+      </div>
+    </div>
+    <span class="chevron">›</span>
+  </div>
+
+  <div class="entry-details">
+    <div class="entry-stats-row">
+      <div class="entry-stat-box good">
+        <div class="entry-stat-num">{{ e.stats.good }}</div>
+        <div class="entry-stat-label">Раскрыто</div>
+      </div>
+      <div class="entry-stat-box partial">
+        <div class="entry-stat-num">{{ e.stats.partial }}</div>
+        <div class="entry-stat-label">Частично</div>
+      </div>
+      <div class="entry-stat-box weak">
+        <div class="entry-stat-num">{{ e.stats.weak }}</div>
+        <div class="entry-stat-label">Слабо</div>
+      </div>
+      <div class="entry-stat-box missing">
+        <div class="entry-stat-num">{{ e.stats.missing }}</div>
+        <div class="entry-stat-label">Отсутствует</div>
+      </div>
+    </div>
+    {% for s in e.sections %}
+    <div class="entry-section-row">
+      <span class="entry-sec-num">{{ s.num }}</span>
+      <div class="entry-sec-info">
+        <div class="entry-sec-title">{{ s.title }}</div>
+        <div class="entry-sec-desc">{{ s.description }}</div>
+      </div>
+      <div class="entry-sec-bar">
+        <div class="entry-sec-bar-fill {{ s.status }}" style="width:{{ s.score }}%"></div>
+      </div>
+      <span class="entry-sec-score {{ s.status }}">{{ s.score|round|int }}%</span>
+      <span class="entry-sec-badge {{ s.status }}">
+        {% if s.status == 'good' %}✓ Раскрыто
+        {% elif s.status == 'partial' %}~ Частично
+        {% elif s.status == 'weak' %}! Слабо
+        {% else %}✗ Нет{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+    {% if e.original_text %}
+    <button class="text-toggle" onclick="event.stopPropagation();this.nextElementSibling.classList.toggle('show');this.textContent=this.nextElementSibling.classList.contains('show')?'▲ Скрыть текст':'▼ Показать текст тезисов'">▼ Показать текст тезисов</button>
+    <div class="text-preview">{{ e.original_text }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<script>
+document.querySelectorAll('.period-tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.period-tab').forEach(function(t){t.classList.remove('active')});
+    tab.classList.add('active');
+    var p=tab.getAttribute('data-period');
+    document.querySelectorAll('.period-panel').forEach(function(el){
+      el.style.display=el.getAttribute('data-period')===p?'':'none';
+    });
+  });
+});
+</script>
 {% endblock %}

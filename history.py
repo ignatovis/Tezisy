@@ -13,6 +13,12 @@ HISTORY_FILE = os.path.join(_DATA_DIR, 'history.json')
 COLLEAGUES_FILE = os.path.join(_DATA_DIR, 'colleagues.json')
 _lock = Lock()
 
+SCORE_RESET_DATE = '2026-09-28'
+
+
+def _is_current_period(timestamp_str):
+    return timestamp_str[:10] >= SCORE_RESET_DATE
+
 
 def _ensure_dir():
     os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
@@ -71,17 +77,34 @@ def get_authors_summary(include_private=False):
     for entry in data:
         name = entry['author']
         if name not in authors:
-            authors[name] = {'author': name, 'analyses': [], 'total_score': 0}
-        authors[name]['analyses'].append(entry)
-        authors[name]['total_score'] += entry['overall_score']
+            authors[name] = {'author': name, 'current': [], 'old': []}
+        if _is_current_period(entry['timestamp']):
+            authors[name]['current'].append(entry)
+        else:
+            authors[name]['old'].append(entry)
 
     result = []
     for name, info in authors.items():
-        count = len(info['analyses'])
-        avg = round(info['total_score'] / count, 1) if count else 0
-        last = max(info['analyses'], key=lambda x: x['timestamp'])
+        current = info['current']
+        old = info['old']
+        all_entries = current + old
 
-        if avg >= 80:
+        if not all_entries:
+            continue
+
+        count_current = len(current)
+        count_old = len(old)
+        total_score = sum(e['overall_score'] for e in current)
+        avg = round(total_score / count_current, 1) if count_current else 0
+
+        if count_current:
+            last = max(current, key=lambda x: x['timestamp'])
+        else:
+            last = max(old, key=lambda x: x['timestamp'])
+
+        if not count_current:
+            verdict_class = 'old'
+        elif avg >= 80:
             verdict_class = 'good'
         elif avg >= 60:
             verdict_class = 'partial'
@@ -92,11 +115,12 @@ def get_authors_summary(include_private=False):
 
         result.append({
             'author': name,
-            'count': count,
+            'count': count_current,
+            'count_old': count_old,
             'avg_score': avg,
             'verdict_class': verdict_class,
             'last_date': last['timestamp'][:10],
-            'projects': list({e['project'] for e in info['analyses'] if e.get('project')}),
+            'projects': list({e['project'] for e in all_entries if e.get('project')}),
         })
 
     result.sort(key=lambda x: x['avg_score'], reverse=True)
@@ -108,6 +132,8 @@ def get_author_history(author, include_private=False):
     entries = [e for e in data if e['author'] == author]
     if not include_private:
         entries = [e for e in entries if e.get('visibility', 'published') == 'published']
+    for e in entries:
+        e['period'] = 'current' if _is_current_period(e['timestamp']) else 'old'
     entries.sort(key=lambda x: x['timestamp'], reverse=True)
     return entries
 

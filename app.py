@@ -137,38 +137,34 @@ def reports():
     return render_template('reports.html', authors=authors)
 
 
-@app.route('/report/<path:author>')
-def report_author(author):
-    entries = history.get_author_history(author)
-    if not entries:
-        flash(f'Нет данных для «{author}»', 'error')
-        return redirect(url_for('reports'))
+def _calc_period_stats(entry_list):
+    if not entry_list:
+        return {
+            'avg_score': 0, 'avg_class': 'bad', 'count': 0,
+            'section_avgs': [], 'total_stats': {'good': 0, 'partial': 0, 'weak': 0, 'missing': 0},
+        }
 
-    total = sum(e['overall_score'] for e in entries)
-    avg_score = round(total / len(entries), 1)
+    total = sum(e['overall_score'] for e in entry_list)
+    avg = round(total / len(entry_list), 1)
 
-    if avg_score >= 80:
-        avg_class = 'good'
-    elif avg_score >= 60:
-        avg_class = 'partial'
-    elif avg_score >= 40:
-        avg_class = 'weak'
+    if avg >= 80:
+        cls = 'good'
+    elif avg >= 60:
+        cls = 'partial'
+    elif avg >= 40:
+        cls = 'weak'
     else:
-        avg_class = 'bad'
+        cls = 'bad'
 
-    section_avgs = {}
-    for entry in entries:
+    sec_map = {}
+    for entry in entry_list:
         for sec in entry.get('sections', []):
             key = sec['num']
-            if key not in section_avgs:
-                section_avgs[key] = {
-                    'num': sec['num'],
-                    'title': sec['title'],
-                    'scores': [],
-                }
-            section_avgs[key]['scores'].append(sec['score'])
+            if key not in sec_map:
+                sec_map[key] = {'num': sec['num'], 'title': sec['title'], 'scores': []}
+            sec_map[key]['scores'].append(sec['score'])
 
-    for v in section_avgs.values():
+    for v in sec_map.values():
         v['avg'] = round(sum(v['scores']) / len(v['scores']), 1)
         if v['avg'] >= 70:
             v['status'] = 'good'
@@ -179,27 +175,54 @@ def report_author(author):
         else:
             v['status'] = 'not_found'
 
-    section_list = sorted(section_avgs.values(), key=lambda x: x['num'])
-
-    projects = list({e['project'] for e in entries if e.get('project') and e['project'] != 'Не указан'})
-
-    total_stats = {'good': 0, 'partial': 0, 'weak': 0, 'missing': 0}
-    for entry in entries:
+    stats = {'good': 0, 'partial': 0, 'weak': 0, 'missing': 0}
+    for entry in entry_list:
         s = entry.get('stats', {})
-        total_stats['good'] += s.get('good', 0)
-        total_stats['partial'] += s.get('partial', 0)
-        total_stats['weak'] += s.get('weak', 0)
-        total_stats['missing'] += s.get('missing', 0)
+        stats['good'] += s.get('good', 0)
+        stats['partial'] += s.get('partial', 0)
+        stats['weak'] += s.get('weak', 0)
+        stats['missing'] += s.get('missing', 0)
+
+    return {
+        'avg_score': avg, 'avg_class': cls, 'count': len(entry_list),
+        'section_avgs': sorted(sec_map.values(), key=lambda x: x['num']),
+        'total_stats': stats,
+    }
+
+
+@app.route('/report/<path:author>')
+def report_author(author):
+    entries = history.get_author_history(author)
+    if not entries:
+        flash(f'Нет данных для «{author}»', 'error')
+        return redirect(url_for('reports'))
+
+    current_entries = [e for e in entries if e.get('period') == 'current']
+    old_entries = [e for e in entries if e.get('period') == 'old']
+
+    periods = {
+        'current': _calc_period_stats(current_entries),
+        'old': _calc_period_stats(old_entries),
+        'all': _calc_period_stats(entries),
+    }
+
+    active = periods['current'] if current_entries else periods['all']
+    projects = list({e['project'] for e in entries if e.get('project') and e['project'] != 'Не указан'})
 
     return render_template('report_author.html',
                            author=author,
                            entries=entries,
-                           avg_score=avg_score,
-                           avg_class=avg_class,
-                           count=len(entries),
-                           section_avgs=section_list,
+                           current_entries=current_entries,
+                           old_entries=old_entries,
+                           periods=periods,
+                           avg_score=active['avg_score'],
+                           avg_class=active['avg_class'],
+                           count=len(current_entries),
+                           count_old=len(old_entries),
+                           section_avgs=active['section_avgs'],
                            projects=projects,
-                           total_stats=total_stats)
+                           total_stats=active['total_stats'],
+                           score_reset_date=history.SCORE_RESET_DATE)
 
 
 @app.route('/help')
